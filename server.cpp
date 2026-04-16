@@ -36,7 +36,8 @@ struct record
 class hashTableCell
 {
 	/* Public members */
-	public:	
+	public:
+	
 
 	/**
  	 * Initialize the mutex
@@ -44,6 +45,8 @@ class hashTableCell
 	hashTableCell()
 	{
 		/* Initialize the mutex using pthread_mutex_init() */
+		pthread_mutex_init(&cellMutex, NULL);
+
 	}
 	
 	/**
@@ -52,6 +55,7 @@ class hashTableCell
 	~hashTableCell()
 	{
 		/* Deallocate the mutex using pthread_mutex_destroy() */
+		pthread_mutex_destroy(&cellMutex);
 	}
 	
 	/**
@@ -60,6 +64,7 @@ class hashTableCell
 	void lockCell()
 	{
 		/*TODO: Add code for locking the cell mutex */
+		pthread_mutex_lock(&cellMutex);
 	}
 	
 	/**
@@ -68,6 +73,7 @@ class hashTableCell
 	void unlockCell()
 	{
 		/* TODO: Add code for unlocking the cell mutex */
+		pthread_mutex_unlock(&cellMutex);
 	}
 
 		
@@ -79,6 +85,7 @@ class hashTableCell
 	/**
  	 * TODO: declare a cell mutex
  	 */
+	pthread_mutex_t cellMutex;
 	
 };
 
@@ -190,6 +197,7 @@ void addToHashTable(const record& rec)
 	/**
  	 * TODO: grab mutex of the hash table cell
  	 */
+	hashTable.at(rec.id % NUMBER_OF_HASH_CELLS).lockCell();
 	
 	/* Hash, and save the record */
 	hashTable.at(rec.id % NUMBER_OF_HASH_CELLS).recordList.push_back(rec);
@@ -197,6 +205,8 @@ void addToHashTable(const record& rec)
 	/**
  	 * TODO: release mutex of the hashtable cell
  	 */
+
+	 hashTable.at(rec.id % NUMBER_OF_HASH_CELLS).unlockCell();
 	
 }
 
@@ -220,6 +230,7 @@ record getHashTableRecord(const int& id)
 	/**
  	 * TODO: grab mutex of the cell
  	 */
+	hashTableCellPtr->lockCell();
 	
 	/* Get the iterator to the list of records hashing to this location */
 	list<record>::iterator recIt = hashTableCellPtr->recordList.begin();
@@ -230,7 +241,7 @@ record getHashTableRecord(const int& id)
 		if(recIt->id == id) 
 		{
 			rec = *recIt;
-			
+			break;
 		}
 		
 		/* Advance the record it */
@@ -245,6 +256,8 @@ record getHashTableRecord(const int& id)
  	 * TODO: release mutex of the cell. Hint: call unlockCell() to release
      *       mutex protecting the cell.
  	 */
+
+	 hashTableCellPtr->unlockCell();
 	
 	return rec;
 }
