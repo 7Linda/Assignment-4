@@ -257,7 +257,7 @@ record getHashTableRecord(const int& id)
      *       mutex protecting the cell.
  	 */
 
-	 hashTableCellPtr->unlockCell();
+	hashTableCellPtr->unlockCell();
 	
 	return rec;
 }
