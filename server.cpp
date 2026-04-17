@@ -110,16 +110,22 @@ list<int> idsToLookUpList;
 /**
  * TODO: Declare and initialize a mutex for protecting the idsToLookUpList.
  */
+pthread_mutex_t idsToLookUpListMutex;
+pthread_mutex_init(&idsToLookUpListMutex, NULL);
 
 /**
  * TODO: declare and initialize the condition variable, threadPoolCondVar, 
  * for implementing a thread pool.
  */
 
+ bool threadPoolCondVar = false;
+
 /* TODO: Declare the mutex, threadPoolMutex, for protecting the thread pool
  * condition variable. 
  */
 
+pthread_mutex_t threadPoolMutex;
+pthread_mutex_init(&threadPoolMutex, NULL);
 
 /**
  * Prototype for createInserterThreads
@@ -140,6 +146,7 @@ void cleanUp(int sig)
 {
 
 	/* Add code for deallocating the queue */
+
 }
 
 /**
@@ -316,6 +323,7 @@ int getIdsToLookUp()
 	int id = -1;
 	
 	/* TODO: Aquire the idsToLookUpListMutex mutex */
+	pthread_mutex_lock(&idsToLookUpListMutex)
 	
 	/* Remove id from the list if exists */
 	if(!idsToLookUpList.empty()) 
@@ -325,7 +333,8 @@ int getIdsToLookUp()
     }
 	
 	/* TODO: Release idsToLookUpListMutex  */
-	
+	pthread_mutex_unlock(&idsToLookUpListMutex)
+
 	return id;
 }
 
@@ -337,7 +346,6 @@ void addIdsToLookUp(const int& id)
 {
 	/* TODO: Aquire idsToLookUpListMutex the list mutex */
 	
-		
 	/* Add the element to look up */
 	idsToLookUpList.push_back(id);
 		
