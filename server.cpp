@@ -145,9 +145,20 @@ void* addNewRecords(void* arg);
  */
 void cleanUp(int sig)
 {
-
-	/* Add code for deallocating the queue */
-
+	fprintf(stderr, "Cleaning up message queue...\n");
+	
+	/* Remove the message queue */
+	if (msgctl(msqid, IPC_RMID, NULL) < 0)
+	{
+		perror("msgctl");
+	}
+	else
+	{
+		fprintf(stderr, "Message queue %d removed successfully.\n", msqid);
+	}
+	
+	/* Exit the program */
+	exit(0);
 }
 
 /**
@@ -423,8 +434,18 @@ void wakeUpThread()
  */
 void createThreads(const int& numThreads)
 {
-	/** TODO: create numThreads threads that call threadPoolFunc() */
+	lookupThreads = new pthread_t[numThreads];
 	
+	/* Create the lookup threads */
+	for(int i = 0; i < numThreads; i++)
+	{
+		if(pthread_create(&lookupThreads[i], NULL, threadPoolFunc, NULL) != 0)
+		{
+			perror("pthread_create for lookup thread");
+			exit(-1);
+		}
+		fprintf(stderr, "Created lookup thread %d\n", i);
+	}
 }
 
 /**
