@@ -118,7 +118,8 @@ pthread_mutex_init(&idsToLookUpListMutex, NULL);
  * for implementing a thread pool.
  */
 
- bool threadPoolCondVar = false;
+pthread_cond_t threadPoolCondVar;
+pthread_cond_init(&threadPoolCondVar, NULL);
 
 /* TODO: Declare the mutex, threadPoolMutex, for protecting the thread pool
  * condition variable. 
@@ -323,7 +324,7 @@ int getIdsToLookUp()
 	int id = -1;
 	
 	/* TODO: Aquire the idsToLookUpListMutex mutex */
-	pthread_mutex_lock(&idsToLookUpListMutex)
+	pthread_mutex_lock(&idsToLookUpListMutex);
 	
 	/* Remove id from the list if exists */
 	if(!idsToLookUpList.empty()) 
@@ -333,7 +334,7 @@ int getIdsToLookUp()
     }
 	
 	/* TODO: Release idsToLookUpListMutex  */
-	pthread_mutex_unlock(&idsToLookUpListMutex)
+	pthread_mutex_unlock(&idsToLookUpListMutex);
 
 	return id;
 }
@@ -345,11 +346,12 @@ int getIdsToLookUp()
 void addIdsToLookUp(const int& id)
 {
 	/* TODO: Aquire idsToLookUpListMutex the list mutex */
-	
+	pthread_mutex_lock(&idsToLookUpListMutex);
 	/* Add the element to look up */
 	idsToLookUpList.push_back(id);
 		
 	/* TODO: Release the idsToLookUpList  */
+	pthread_mutex_unlock(&idsToLookUpListMutex);
 }
 
 /**
@@ -366,16 +368,17 @@ void* threadPoolFunc(void* arg)
 	{
 
 		/* TODO: Lock the mutex protecting threadPoolCondVar from race conditions */
-		
+		pthread_mutex_lock(&threadPoolMutex);
+
 		/* Get the id to look up */
 		id = getIdsToLookUp();	
 			
 		/* No work to do */
 		while(id == -1)
 		{
-				
 			
 			/* TODO: Sleep on the condition variable threadPoolCondVar */
+			pthread_cond_wait(&threadPoolCondVar, &threadPoolMutex);
 			
 			/* Get the id to look up */
 			id = getIdsToLookUp();	
@@ -384,7 +387,7 @@ void* threadPoolFunc(void* arg)
 		
 		
 		/* TODO: Release the mutex protecting threadPoolCondVar from race conditions */
-		
+		pthread_mutex_unlock(&threadPoolMutex);
 			
 		/* Look up id */
 		record rec = getHashTableRecord(id);
@@ -405,10 +408,13 @@ void wakeUpThread()
 	
 
 	/* TODO: Lock the mutex protecting threadPoolCondVar from race conditions */
+	pthread_mutex_lock(&threadPoolMutex);
 
 	/* TODO: Wake up a thread sleeping on threadPoolCondVar */
+	pthread_cond_signal(&threadPoolCondVar);
 	
 	/* TODO: Release the mutex protecting threadPoolCondVar from race conditions */
+	pthread_mutex_unlock(&threadPoolMutex);
 }
 
 /**
