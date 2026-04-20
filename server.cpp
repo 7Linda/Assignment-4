@@ -458,7 +458,19 @@ void createInserterThreads()
 	/* TODO: create NUM_INSERTERS threads that add new elements to the hashtable
  	 * by calling addNewRecords(). 
  	 */
+		static pthread_t inserterThreads[NUM_INSERTERS];
+
+		for (int i = 0; i < NUM_INSERTERS; i++)
+	{
+		if (pthread_create(&inserterThreads[i], NULL, addNewRecords, NULL) != 0)
+		{
+			perror("pthread_create for inserter thread");
+			exit(-1);
+		}
+		fprintf(stderr, "Created inserter thread %d\n", i);
+	}
 }
+
 
 
 /**
@@ -483,6 +495,7 @@ void processIncomingMessages()
 		addIdsToLookUp(msg.id);
 			
 		/* TODO: Wake up a thread to process the newly received id */
+		wakeUpThread();
 	}
 }
 
@@ -538,7 +551,8 @@ int main(int argc, char** argv)
 	}
 	
 	/* TODO: install a signal handler for deallocating the message queue */	
-	
+	signal(SIGINT, cleanUp);
+
 	/* Populate the hash table */
 	populateHashTable(argv[1]);
 	
