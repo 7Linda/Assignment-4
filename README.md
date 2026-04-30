@@ -7,39 +7,91 @@
 - Arturo Sanchez
 - Aidan Vuong
 
-## Programming Language
+## Language
 
 C++
 
-## Project Description
+## Description
 
-This project demonstrates client-server communication using System V message queues in Linux. The server loads records from a database file into a hash table, creates multiple worker threads, and waits for client requests. The client sends random record IDs to the server. The server searches for the requested ID and sends the matching record back to the client if it exists.
+This program uses System V message queues to send requests between a client and a server on Linux.
 
-The program also uses pthreads, mutexes, and condition variables to safely manage shared data between multiple threads.
+The server loads records from `namesDB.txt` into a hash table. It then creates worker threads and waits for client requests. The client sends record IDs to the server. If the server finds the ID, it sends the matching record back to the client.
+
+The program uses pthreads, mutexes, and condition variables.
 
 ## Files
 
-- `server.cpp` - Runs the server, loads the database, manages the hash table, creates worker threads, and processes client requests.
-- `client.cpp` - Runs the client and sends lookup requests to the server.
-- `msg.cpp` - Contains the message queue helper functions.
-- `msg.h` - Contains message queue definitions and function declarations.
-- `namesDB.txt` - Database file containing IDs, first names, and last names.
-- `Makefile` - Used to compile the project.
+- `server.cpp`
+- `client.cpp`
+- `msg.cpp`
+- `msg.h`
+- `namesDB.txt`
+- `Makefile`
 
 ## Requirements
 
-This program is intended to run on Linux because it uses System V message queues.
+This project should be run on Linux.
 
-You need:
+Required tools:
 
-- Linux
-- g++
-- make
-- pthread support
+- `g++`
+- `make`
 
-## How to Compile
+## Compile
 
-From the project folder, run:
+In the project folder, run:
 
 ```bash
 make
+```
+
+This creates the server and client executables.
+
+To clean and rebuild:
+
+```bash
+make clean
+make
+```
+
+## Run
+
+Start the server first:
+
+```bash
+./server namesDB.txt 3
+```
+
+The first argument is the database file. The second argument is the number of lookup threads.
+
+Then open a second terminal in the same folder and run the client:
+
+```bash
+./client
+```
+
+The server must be running before the client.
+
+## Stop the Server
+
+In the server terminal, press:
+
+```bash
+Ctrl + C
+```
+
+This stops the server and removes the message queue.
+
+## Database Format
+
+The database file should be formatted like this:
+
+```txt
+id firstName lastName
+```
+
+## Notes
+
+Running `make` only compiles the project. It does not automatically start the server.
+
+The server will keep running while it waits for client requests.
