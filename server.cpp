@@ -12,6 +12,7 @@
 #include <list>
 #include <string>
 #include <fstream>
+#include <cstring>
 
 #include "msg.h"
 using namespace std;
@@ -107,26 +108,25 @@ int msqid;
 /* The ids that yet to be looked up */
 list<int> idsToLookUpList;
 
+pthread_t* lookupThreads;
+
 /**
  * TODO: Declare and initialize a mutex for protecting the idsToLookUpList.
  */
-pthread_mutex_t idsToLookUpListMutex;
-pthread_mutex_init(&idsToLookUpListMutex, NULL);
+pthread_mutex_t idsToLookUpListMutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * TODO: declare and initialize the condition variable, threadPoolCondVar, 
  * for implementing a thread pool.
  */
 
-pthread_cond_t threadPoolCondVar;
-pthread_cond_init(&threadPoolCondVar, NULL);
+pthread_cond_t threadPoolCondVar = PTHREAD_COND_INITIALIZER;
 
 /* TODO: Declare the mutex, threadPoolMutex, for protecting the thread pool
  * condition variable. 
  */
 
-pthread_mutex_t threadPoolMutex;
-pthread_mutex_init(&threadPoolMutex, NULL);
+pthread_mutex_t threadPoolMutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * Prototype for createInserterThreads
@@ -179,7 +179,9 @@ void sendRecord(const int& msqid, const record& rec)
 	msg.messageType = SERVER_TO_CLIENT_MSG;
 	msg.id = rec.id;
 	strncpy(msg.firstName, rec.firstName.c_str(), MAX_NAME_LEN);	
+	msg.firstName[MAX_NAME_LEN - 1] = '\0';
 	strncpy(msg.lastName, rec.lastName.c_str(), MAX_NAME_LEN);
+	msg.lastName[MAX_NAME_LEN - 1] = '\0';
 	
 	/* Send the message */
 	sendMessage(msqid, msg);		
@@ -216,16 +218,17 @@ void addToHashTable(const record& rec)
 	/**
  	 * TODO: grab mutex of the hash table cell
  	 */
-	hashTable.at(rec.id % NUMBER_OF_HASH_CELLS).lockCell();
+	hashTableCell* hashTableCellPtr = &hashTable.at(rec.id % NUMBER_OF_HASH_CELLS);
+	hashTableCellPtr->lockCell();
 	
 	/* Hash, and save the record */
-	hashTable.at(rec.id % NUMBER_OF_HASH_CELLS).recordList.push_back(rec);
+	hashTableCellPtr->recordList.push_back(rec);
 	
 	/**
  	 * TODO: release mutex of the hashtable cell
  	 */
 
-	 hashTable.at(rec.id % NUMBER_OF_HASH_CELLS).unlockCell();
+	hashTableCellPtr->unlockCell();
 	
 }
 
@@ -254,7 +257,8 @@ record getHashTableRecord(const int& id)
 	/* Get the iterator to the list of records hashing to this location */
 	list<record>::iterator recIt = hashTableCellPtr->recordList.begin();
 	
-	do
+	/* Go through all the records */
+	while(recIt != hashTableCellPtr->recordList.end())
 	{
 		/* Save the record */
 		if(recIt->id == id) 
@@ -266,8 +270,6 @@ record getHashTableRecord(const int& id)
 		/* Advance the record it */
 		++recIt;
 	}
-	/* Go through all the records */
-	while((recIt != hashTableCellPtr->recordList.end()) && (rec.id != id));
 	
 	
 	
@@ -291,6 +293,7 @@ int populateHashTable(const string& fileName)
 {	
 	/* The record */
 	record rec;
+	int numRecords = 0;
 	
 	/* Open the file */
 	ifstream dbFile(fileName.c_str());
@@ -316,12 +319,15 @@ int populateHashTable(const string& fileName)
 			dbFile >> rec.firstName >> rec.lastName;
 						
 			/* Add to hash table */
-			addToHashTable(rec);	
+			addToHashTable(rec);
+			numRecords++;	
 		}
 	}
 	
 	/* Close the file */
 	dbFile.close();
+
+	return numRecords;
 }
 
 /**
